@@ -21,7 +21,7 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
   // ── Logo (top-left, larger)
   try {
     const img = await loadImage(msLogo);
-    doc.addImage(img, "JPEG", margin, 4, 55, 44);
+    doc.addImage(img, "JPEG", 2, 4, 55, 44);
   } catch {}
 
   // ── Title (top-right)
