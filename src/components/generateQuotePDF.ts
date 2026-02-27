@@ -32,15 +32,16 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
 
   // ── Quote info block (right-aligned, beside logo)
   doc.setFontSize(10);
-  const infoX = pageWidth - 100;
-  const valX = infoX + 30;
+  doc.setTextColor(0, 0, 0);
+  const labelRight = pageWidth - 72;
+  const valLeft = labelRight + 3;
   let y = 28;
 
   const drawInfoRow = (label: string, value: string) => {
     doc.setFont("times", "bold");
-    doc.text(`${label}:`, infoX, y);
+    doc.text(`${label}:`, labelRight, y, { align: "right" });
     doc.setFont("times", "normal");
-    doc.text(value, valX, y);
+    doc.text(value, valLeft, y);
     y += 5.5;
   };
 
