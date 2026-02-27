@@ -13,15 +13,15 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 }
 
 export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) {
-  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 12;
 
-  // ── Logo (top-left, compact)
+  // ── Logo (top-left, larger)
   try {
     const img = await loadImage(msLogo);
-    doc.addImage(img, "JPEG", margin, 4, 38, 30);
+    doc.addImage(img, "JPEG", margin, 4, 55, 44);
   } catch {}
 
   // ── Title (top-right)
