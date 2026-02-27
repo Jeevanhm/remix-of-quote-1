@@ -67,8 +67,8 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
     item.type,
     item.itemName,
     item.qty.toString(),
-    `$${item.unitPrice.toFixed(2)}`,
-    `$${(item.qty * item.unitPrice).toFixed(2)}`,
+    `$${item.unitPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+    `$${(item.qty * item.unitPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
     item.notes || "",
   ]);
 
@@ -109,9 +109,9 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
     head: [["Item", "Amount", "Notes"]],
     body: [
       ["Project Fund #", info.projectFund || "TBD", ""],
-      ["Monthly", `$${monthlyTotal.toFixed(2)}`, ""],
+      ["Monthly", `$${monthlyTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, ""],
       ["Number of Month", months.toString(), ""],
-      ["1 - Time Funding", `$${oneTimeFunding.toFixed(2)}`, ""],
+      ["1 - Time Funding", `$${oneTimeFunding.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, ""],
     ],
     styles: { font: "times", fontSize: 9.5, cellPadding: 2, textColor: [0, 0, 0] },
     headStyles: {
