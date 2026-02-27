@@ -219,7 +219,7 @@ const QuoteBuilder = () => {
           <div className="flex items-center gap-4">
             <img src={msLogo} alt="Mount Sinai Health System" className="h-16 w-auto" />
             <div>
-              <h1 className="text-2xl font-bold text-foreground tracking-tight">Azure and On-prem Quote Generator</h1>
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">Azure and On-Prem Quote Generator</h1>
               <p className="text-sm text-muted-foreground mt-0.5">Build and export cloud infrastructure quotes</p>
             </div>
           </div>
