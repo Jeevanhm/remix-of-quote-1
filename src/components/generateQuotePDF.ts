@@ -45,12 +45,12 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
     y += 5.5;
   };
 
-  drawInfoRow("Quotation #", info.quotationNumber || "—");
   drawInfoRow("Application", info.application || "—");
-  drawInfoRow("Created On", info.date || "—");
-  drawInfoRow("Valid Until", info.validUntil || "—");
   drawInfoRow("Quote From", info.quoteFrom || "—");
   drawInfoRow("Issuer", info.issuer || "—");
+  drawInfoRow("Date", info.date || "—");
+
+  y += 3; // small gap before Attention
   drawInfoRow("Attention", info.attention || "—");
 
   // ── Divider
