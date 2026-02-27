@@ -16,7 +16,7 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 12;
+  const margin = 8;
 
   // ── Logo (top-left, larger)
   try {
@@ -33,7 +33,7 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
   // ── Quote info block (right-aligned, beside logo)
   doc.setFontSize(10);
   doc.setTextColor(0, 0, 0);
-  const labelRight = pageWidth - 72;
+  const labelRight = pageWidth - 68;
   const valLeft = labelRight + 3;
   let y = 28;
 
