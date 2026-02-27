@@ -134,7 +134,7 @@ const QuoteBuilder = () => {
 
   const addItem = (item: PriceItem) => {
     const newLineItem: QuoteLineItem = {
-      id: crypto.randomUUID(),
+      id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2) + Date.now().toString(36),
       resource: "",
       type: item.category,
       itemName: item.item,
