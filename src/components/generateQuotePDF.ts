@@ -111,7 +111,7 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
       ["Project Fund #", info.projectFund || "TBD", ""],
       ["Monthly", `$${monthlyTotal.toFixed(2)}`, ""],
       ["Number of Month", months.toString(), ""],
-      ["1 - Time Funding", `$          ${oneTimeFunding.toFixed(2)}`, ""],
+      ["1 - Time Funding", `$${oneTimeFunding.toFixed(2)}`, ""],
     ],
     styles: { font: "times", fontSize: 9.5, cellPadding: 2, textColor: [0, 0, 0] },
     headStyles: {
@@ -127,8 +127,8 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
     },
     didParseCell: (data: any) => {
       if (data.section === 'body' && data.row.index === 3) {
-        data.cell.styles.fillColor = [68, 114, 196];
-        data.cell.styles.textColor = [255, 255, 255];
+        data.cell.styles.fillColor = [200, 200, 200];
+        data.cell.styles.textColor = [0, 0, 0];
         data.cell.styles.fontStyle = 'bold';
       }
     },
