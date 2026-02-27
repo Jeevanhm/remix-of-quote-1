@@ -26,21 +26,21 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
 
   // ── Title (top-right)
   doc.setFont("times", "bold");
-  doc.setFontSize(15);
-  doc.text("MSHS Quotation", pageWidth - margin, 14, { align: "right" });
+  doc.setFontSize(18);
+  doc.text("MSHS Quotation", pageWidth - margin, 16, { align: "right" });
 
   // ── Quote info block (right-aligned, beside logo)
-  doc.setFontSize(8.5);
-  const infoX = pageWidth - 105;
-  const valX = infoX + 28;
-  let y = 24;
+  doc.setFontSize(10);
+  const infoX = pageWidth - 100;
+  const valX = infoX + 30;
+  let y = 28;
 
   const drawInfoRow = (label: string, value: string) => {
     doc.setFont("times", "bold");
     doc.text(`${label}:`, infoX, y);
     doc.setFont("times", "normal");
     doc.text(value, valX, y);
-    y += 4.5;
+    y += 5.5;
   };
 
   drawInfoRow("Application", info.application || "—");
@@ -51,13 +51,13 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
   drawInfoRow("Valid Until", info.validUntil || "—");
 
   // ── Divider
-  const dividerY = Math.max(y + 2, 30);
+  const dividerY = Math.max(y + 2, 50);
   doc.setDrawColor(68, 114, 196);
   doc.setLineWidth(0.4);
   doc.line(margin, dividerY, pageWidth - margin, dividerY);
 
   // ── Line items table
-  const tableStartY = dividerY + 2;
+  const tableStartY = dividerY + 3;
 
   const tableData = items.map((item) => [
     item.resource,
@@ -74,20 +74,20 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
     margin: { left: margin, right: margin },
     head: [["Resource", "Type", "Item", "Qty", "Unit $", "Monthly $", "Notes"]],
     body: tableData,
-    styles: { font: "times", fontSize: 7.5, cellPadding: 1.5 },
+    styles: { font: "times", fontSize: 9, cellPadding: 2 },
     headStyles: {
       fillColor: [68, 114, 196],
       textColor: [255, 255, 255],
       fontStyle: "bold",
-      fontSize: 8,
+      fontSize: 9.5,
       halign: "center",
     },
     columnStyles: {
-      0: { cellWidth: 40 },
-      1: { cellWidth: 30 },
-      2: { cellWidth: 65 },
+      0: { cellWidth: 30 },
+      1: { cellWidth: 22 },
+      2: { cellWidth: 50 },
       3: { cellWidth: 12, halign: "center" },
-      4: { cellWidth: 22, halign: "right" },
+      4: { cellWidth: 20, halign: "right" },
       5: { cellWidth: 22, halign: "right" },
       6: { cellWidth: "auto" },
     },
@@ -110,12 +110,12 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
       ["Number of Months", months.toString(), ""],
       ["1 Time Funding", `$${oneTimeFunding.toFixed(2)}`, ""],
     ],
-    styles: { font: "times", fontSize: 8, cellPadding: 1.5 },
+    styles: { font: "times", fontSize: 9.5, cellPadding: 2 },
     headStyles: {
       fillColor: [68, 114, 196],
       textColor: [255, 255, 255],
       fontStyle: "bold",
-      fontSize: 8,
+      fontSize: 10,
     },
     columnStyles: {
       0: { cellWidth: 35, fontStyle: "bold" },
@@ -128,7 +128,7 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
 
   // ── Footer
   doc.setFont("times", "italic");
-  doc.setFontSize(7);
+  doc.setFontSize(8);
   doc.setTextColor(120);
   doc.text("This quotation is valid for 60 days from the created date.", margin, pageHeight - 8);
   doc.text(
