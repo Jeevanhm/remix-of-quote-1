@@ -47,11 +47,11 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
 
   drawInfoRow("Quotation #", info.quotationNumber || "—");
   drawInfoRow("Application", info.application || "—");
+  drawInfoRow("Created On", info.date || "—");
+  drawInfoRow("Valid Until", info.validUntil || "—");
   drawInfoRow("Quote From", info.quoteFrom || "—");
   drawInfoRow("Issuer", info.issuer || "—");
   drawInfoRow("Attention", info.attention || "—");
-  drawInfoRow("Created On", info.date || "—");
-  drawInfoRow("Valid Until", info.validUntil || "—");
 
   // ── Divider
   const dividerY = Math.max(y + 2, 50);
