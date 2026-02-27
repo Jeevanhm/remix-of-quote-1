@@ -27,6 +27,7 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
   // ── Title (top-right)
   doc.setFont("times", "bold");
   doc.setFontSize(18);
+  doc.setTextColor(0, 0, 0);
   doc.text("MSHS Quotation", pageWidth - margin, 16, { align: "right" });
 
   // ── Quote info block (right-aligned, beside logo)
@@ -75,7 +76,7 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
     margin: { left: margin, right: margin },
     head: [["Resource", "Type", "Item", "Qty", "Unit $", "Monthly $", "Notes"]],
     body: tableData,
-    styles: { font: "times", fontSize: 9, cellPadding: 2 },
+    styles: { font: "times", fontSize: 9, cellPadding: 2, textColor: [0, 0, 0] },
     headStyles: {
       fillColor: [68, 114, 196],
       textColor: [255, 255, 255],
@@ -111,7 +112,7 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
       ["Number of Months", months.toString(), ""],
       ["1 Time Funding", `$${oneTimeFunding.toFixed(2)}`, ""],
     ],
-    styles: { font: "times", fontSize: 9.5, cellPadding: 2 },
+    styles: { font: "times", fontSize: 9.5, cellPadding: 2, textColor: [0, 0, 0] },
     headStyles: {
       fillColor: [68, 114, 196],
       textColor: [255, 255, 255],
@@ -130,7 +131,7 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
   // ── Footer
   doc.setFont("times", "italic");
   doc.setFontSize(8);
-  doc.setTextColor(120);
+  doc.setTextColor(0, 0, 0);
   doc.text("This quotation is valid for 60 days from the created date.", margin, pageHeight - 8);
   doc.text(
     `Generated ${new Date().toLocaleDateString()}`,

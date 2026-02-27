@@ -37,7 +37,12 @@ export interface QuoteInfo {
   numberOfMonths: string;
 }
 
-function getNextQuotationNumber(): string {
+function peekQuotationNumber(): string {
+  const current = parseInt(localStorage.getItem("quotationCounter") || "0", 10);
+  return (current + 1).toString().padStart(5, "0");
+}
+
+function incrementQuotationNumber(): string {
   const key = "quotationCounter";
   const current = parseInt(localStorage.getItem(key) || "0", 10);
   const next = current + 1;
@@ -87,7 +92,7 @@ const QuoteBuilder = () => {
   const [lineItems, setLineItems] = useState<QuoteLineItem[]>([]);
   const now = formatDate(new Date());
   const [quoteInfo, setQuoteInfo] = useState<QuoteInfo>(() => ({
-    quotationNumber: getNextQuotationNumber(),
+    quotationNumber: peekQuotationNumber(),
     application: "",
     quoteFrom: "",
     issuer: "Cloud Architect & Engineering",
@@ -198,7 +203,11 @@ const QuoteBuilder = () => {
       toast.error("Add at least one item to generate a quote.");
       return;
     }
-    await generateQuotePDF(lineItems, quoteInfo);
+    const currentNumber = incrementQuotationNumber();
+    const infoWithNumber = { ...quoteInfo, quotationNumber: currentNumber };
+    await generateQuotePDF(lineItems, infoWithNumber);
+    // Update displayed number to next preview
+    setQuoteInfo((p) => ({ ...p, quotationNumber: peekQuotationNumber() }));
     toast.success("PDF generated successfully!");
   };
 
