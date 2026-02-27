@@ -43,6 +43,7 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
     y += 5.5;
   };
 
+  drawInfoRow("Quotation #", info.quotationNumber || "—");
   drawInfoRow("Application", info.application || "—");
   drawInfoRow("Quote From", info.quoteFrom || "—");
   drawInfoRow("Issuer", info.issuer || "—");
