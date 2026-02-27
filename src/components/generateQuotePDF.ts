@@ -33,7 +33,7 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
   // ── Quote info block (right-aligned, beside logo)
   doc.setFontSize(10);
   doc.setTextColor(0, 0, 0);
-  const labelRight = pageWidth - 68;
+  const labelRight = pageWidth - 55;
   const valLeft = labelRight + 3;
   let y = 28;
 
