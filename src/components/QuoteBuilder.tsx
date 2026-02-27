@@ -26,6 +26,7 @@ export interface QuoteLineItem {
 }
 
 export interface QuoteInfo {
+  quotationNumber: string;
   application: string;
   quoteFrom: string;
   issuer: string;
@@ -34,6 +35,14 @@ export interface QuoteInfo {
   attention: string;
   projectFund: string;
   numberOfMonths: string;
+}
+
+function getNextQuotationNumber(): string {
+  const key = "quotationCounter";
+  const current = parseInt(localStorage.getItem(key) || "0", 10);
+  const next = current + 1;
+  localStorage.setItem(key, next.toString());
+  return next.toString().padStart(5, "0");
 }
 
 function formatDate(d: Date): string {
@@ -77,7 +86,8 @@ const QuoteBuilder = () => {
   const [catalog, setCatalog] = useState<PriceItem[]>(loadCatalog);
   const [lineItems, setLineItems] = useState<QuoteLineItem[]>([]);
   const now = formatDate(new Date());
-  const [quoteInfo, setQuoteInfo] = useState<QuoteInfo>({
+  const [quoteInfo, setQuoteInfo] = useState<QuoteInfo>(() => ({
+    quotationNumber: getNextQuotationNumber(),
     application: "",
     quoteFrom: "",
     issuer: "Cloud Architect & Engineering",
@@ -86,7 +96,7 @@ const QuoteBuilder = () => {
     attention: "",
     projectFund: "",
     numberOfMonths: "12",
-  });
+  }));
 
   // Catalog management state
   const [catalogOpen, setCatalogOpen] = useState(false);
@@ -336,6 +346,10 @@ const QuoteBuilder = () => {
           <div className="bg-card rounded-lg border border-border p-5">
             <h2 className="font-semibold text-foreground text-sm uppercase tracking-wider mb-4">Quote Details</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Quotation #</label>
+                <Input value={quoteInfo.quotationNumber} readOnly className="bg-muted/50 cursor-not-allowed font-mono" />
+              </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Application</label>
                 <Input value={quoteInfo.application} onChange={(e) => setQuoteInfo((p) => ({ ...p, application: e.target.value }))} />
