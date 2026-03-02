@@ -492,8 +492,8 @@ const QuoteBuilder = () => {
               <h2 className="font-semibold text-foreground text-sm uppercase tracking-wider mb-3">Summary</h2>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Monthly Total</span>
-                  <span className="font-mono font-semibold text-foreground">${monthlyTotal.toFixed(2)}</span>
+                  <span className="text-muted-foreground">Total</span>
+                  <span className="font-mono font-semibold text-foreground">${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Number of Months</span>
