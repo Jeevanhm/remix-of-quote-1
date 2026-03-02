@@ -111,16 +111,25 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
 
   const fmt = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+  const hasOneTimeItems = items.some((i) => isOneTimeItem(i));
+
+  const bodyRows: string[][] = [
+    ["Project Fund #", info.projectFund || "TBD", ""],
+    ["Monthly", fmt(monthlyTotal), ""],
+    ["Number of Month", months.toString(), ""],
+  ];
+  if (hasOneTimeItems) {
+    bodyRows.push(["Total", fmt(total), ""]);
+  }
+  bodyRows.push(["1 - Time Funding", fmt(total), ""]);
+
+  const highlightIndex = bodyRows.length - 1;
+
   autoTable(doc, {
     startY: finalY,
     margin: { left: margin },
     head: [["Item", "Amount", "Notes"]],
-    body: [
-      ["Project Fund #", info.projectFund || "TBD", ""],
-      ["Number of Month", months.toString(), ""],
-      ["Total", fmt(total), ""],
-      ["1 - Time Funding", fmt(total), ""],
-    ],
+    body: bodyRows,
     styles: { font: "times", fontSize: 9.5, cellPadding: 2, textColor: [0, 0, 0] },
     headStyles: {
       fillColor: [68, 114, 196],
@@ -134,7 +143,7 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
       2: { cellWidth: 45 },
     },
     didParseCell: (data: any) => {
-      if (data.section === 'body' && data.row.index === 3) {
+      if (data.section === 'body' && data.row.index === highlightIndex) {
         data.cell.styles.fillColor = [200, 200, 200];
         data.cell.styles.textColor = [0, 0, 0];
         data.cell.styles.fontStyle = 'bold';

@@ -492,18 +492,20 @@ const QuoteBuilder = () => {
               <h2 className="font-semibold text-foreground text-sm uppercase tracking-wider mb-3">Summary</h2>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Total</span>
-                  <span className="font-mono font-semibold text-foreground">${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  <span className="text-muted-foreground">Monthly Total</span>
+                  <span className="font-mono font-semibold text-foreground">${monthlyTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Number of Months</span>
                   <span className="font-mono text-foreground">{months}</span>
                 </div>
+                {oneTimeItems.length > 0 && (
+                  <div className="flex justify-between">
+                    <span className="font-bold text-foreground">Total</span>
+                    <span className="font-mono font-bold text-foreground">${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+                )}
                 <div className="border-t border-border pt-2 flex justify-between">
-                  <span className="font-bold text-foreground">Total</span>
-                  <span className="font-mono font-bold text-foreground">${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                </div>
-                <div className="flex justify-between">
                   <span className="font-bold text-foreground">1 Time Funding</span>
                   <span className="font-mono font-bold text-primary text-lg">${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
