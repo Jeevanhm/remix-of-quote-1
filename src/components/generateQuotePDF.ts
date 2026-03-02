@@ -99,9 +99,17 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
 
   // ── Summary table
   const finalY = (doc as any).lastAutoTable.finalY + 6;
-  const monthlyTotal = items.reduce((s, i) => s + i.qty * i.unitPrice, 0);
   const months = parseInt(info.numberOfMonths) || 12;
-  const oneTimeFunding = monthlyTotal * months;
+
+  const isOneTimeItem = (item: QuoteLineItem) =>
+    item.type === "Compute-On Prem" || item.itemName.startsWith("On-Premise Disk");
+
+  const recurringMonthly = items.filter((i) => !isOneTimeItem(i)).reduce((s, i) => s + i.qty * i.unitPrice, 0);
+  const oneTimeMonthly = items.filter((i) => isOneTimeItem(i)).reduce((s, i) => s + i.qty * i.unitPrice, 0);
+  const monthlyTotal = recurringMonthly + oneTimeMonthly;
+  const total = recurringMonthly * months + oneTimeMonthly;
+
+  const fmt = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   autoTable(doc, {
     startY: finalY,
@@ -109,9 +117,10 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
     head: [["Item", "Amount", "Notes"]],
     body: [
       ["Project Fund #", info.projectFund || "TBD", ""],
-      ["Monthly", `$${monthlyTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, ""],
+      ["Monthly", fmt(monthlyTotal), ""],
       ["Number of Month", months.toString(), ""],
-      ["1 - Time Funding", `$${oneTimeFunding.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, ""],
+      ["Total", fmt(total), "Recurring × months + one-time items"],
+      ["1 - Time Funding", fmt(total), ""],
     ],
     styles: { font: "times", fontSize: 9.5, cellPadding: 2, textColor: [0, 0, 0] },
     headStyles: {
@@ -126,7 +135,7 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
       2: { cellWidth: 45 },
     },
     didParseCell: (data: any) => {
-      if (data.section === 'body' && data.row.index === 3) {
+      if (data.section === 'body' && data.row.index === 4) {
         data.cell.styles.fillColor = [200, 200, 200];
         data.cell.styles.textColor = [0, 0, 0];
         data.cell.styles.fontStyle = 'bold';
