@@ -113,11 +113,15 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
 
   const hasOneTimeItems = items.some((i) => isOneTimeItem(i));
 
+  const hasRecurringItems = items.some((i) => !isOneTimeItem(i));
+
   const bodyRows: string[][] = [
     ["Project Fund #", info.projectFund || "TBD", ""],
-    ["Monthly", fmt(monthlyTotal), ""],
-    ["Number of Month", months.toString(), ""],
   ];
+  if (hasRecurringItems) {
+    bodyRows.push(["Monthly", fmt(monthlyTotal), ""]);
+  }
+  bodyRows.push(["Number of Month", months.toString(), ""]);
   if (hasOneTimeItems) {
     bodyRows.push(["Total", fmt(total), ""]);
   }
