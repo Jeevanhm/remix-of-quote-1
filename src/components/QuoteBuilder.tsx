@@ -194,9 +194,17 @@ const QuoteBuilder = () => {
     return catalog.filter((c) => c.item.toLowerCase().includes(catalogSearch.toLowerCase()));
   }, [catalog, catalogSearch]);
 
-  const monthlyTotal = lineItems.reduce((sum, item) => sum + item.qty * item.unitPrice, 0);
+  const isOneTimeItem = (item: QuoteLineItem) =>
+    item.type === "Compute-On Prem" || item.itemName.startsWith("On-Premise Disk");
+
+  const recurringItems = lineItems.filter((i) => !isOneTimeItem(i));
+  const oneTimeItems = lineItems.filter((i) => isOneTimeItem(i));
+
+  const recurringMonthly = recurringItems.reduce((sum, item) => sum + item.qty * item.unitPrice, 0);
+  const oneTimeMonthly = oneTimeItems.reduce((sum, item) => sum + item.qty * item.unitPrice, 0);
+  const monthlyTotal = recurringMonthly + oneTimeMonthly;
   const months = parseInt(quoteInfo.numberOfMonths) || 12;
-  const oneTimeFunding = monthlyTotal * months;
+  const total = recurringMonthly * months + oneTimeMonthly;
 
   const handleGeneratePDF = async () => {
     if (lineItems.length === 0) {
@@ -492,8 +500,12 @@ const QuoteBuilder = () => {
                   <span className="font-mono text-foreground">{months}</span>
                 </div>
                 <div className="border-t border-border pt-2 flex justify-between">
+                  <span className="font-bold text-foreground">Total</span>
+                  <span className="font-mono font-bold text-foreground">${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+                <div className="flex justify-between">
                   <span className="font-bold text-foreground">1 Time Funding</span>
-                  <span className="font-mono font-bold text-primary text-lg">${oneTimeFunding.toFixed(2)}</span>
+                  <span className="font-mono font-bold text-primary text-lg">${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
               </div>
             </div>
