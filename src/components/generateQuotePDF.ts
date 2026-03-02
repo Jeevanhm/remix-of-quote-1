@@ -117,9 +117,8 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
     head: [["Item", "Amount", "Notes"]],
     body: [
       ["Project Fund #", info.projectFund || "TBD", ""],
-      ["Monthly", fmt(monthlyTotal), ""],
       ["Number of Month", months.toString(), ""],
-      ["Total", fmt(total), "Recurring × months + one-time items"],
+      ["Total", fmt(total), ""],
       ["1 - Time Funding", fmt(total), ""],
     ],
     styles: { font: "times", fontSize: 9.5, cellPadding: 2, textColor: [0, 0, 0] },
@@ -135,7 +134,7 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
       2: { cellWidth: 45 },
     },
     didParseCell: (data: any) => {
-      if (data.section === 'body' && data.row.index === 4) {
+      if (data.section === 'body' && data.row.index === 3) {
         data.cell.styles.fillColor = [200, 200, 200];
         data.cell.styles.textColor = [0, 0, 0];
         data.cell.styles.fontStyle = 'bold';
