@@ -105,13 +105,9 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
       halign: "center",
     },
     columnStyles: {
-      0: { cellWidth: "auto" },
-      1: { cellWidth: 20 },
-      2: { cellWidth: "auto" },
-      3: { cellWidth: 10, halign: "center" },
-      4: { cellWidth: 20, halign: "right" },
-      5: { cellWidth: 22, halign: "right" },
-      6: { cellWidth: "auto" },
+      3: { halign: "center" },
+      4: { halign: "right" },
+      5: { halign: "right" },
     },
     theme: "grid",
   });
