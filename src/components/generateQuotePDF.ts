@@ -161,9 +161,9 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
       fontSize: 10,
     },
     columnStyles: {
-      0: { cellWidth: 35, fontStyle: "bold" },
+      0: { cellWidth: 50, fontStyle: "bold" },
       1: { cellWidth: 35 },
-      2: { cellWidth: 45 },
+      2: { cellWidth: 30 },
     },
     didParseCell: (data: any) => {
       if (data.section === 'body' && data.row.index === highlightIndex) {
