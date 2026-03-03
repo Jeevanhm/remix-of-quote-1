@@ -47,8 +47,19 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
 
   drawInfoRow("Quotation #", info.quotationNumber || "—");
   drawInfoRow("Application", info.application || "—");
-  drawInfoRow("Created On", info.date || "—");
-  drawInfoRow("Valid Until", info.validUntil || "—");
+  // Format dates as "Month Day, Year"
+  const formatDateLong = (dateStr: string) => {
+    if (!dateStr) return "—";
+    const d = new Date(dateStr + "T00:00:00");
+    return d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  };
+
+  const createdDate = formatDateLong(info.date);
+  const validUntilDate = formatDateLong(info.validUntil);
+  const validUntilDisplay = info.validUntil ? `${validUntilDate} (60 Days)` : "—";
+
+  drawInfoRow("Created On", createdDate);
+  drawInfoRow("Valid Until", validUntilDisplay);
   drawInfoRow("Quote From", info.quoteFrom || "—");
   drawInfoRow("Issuer", info.issuer || "—");
   drawInfoRow("Attention", info.attention || "—");
