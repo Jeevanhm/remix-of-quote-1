@@ -144,7 +144,7 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
   if (hasOneTimeItems) {
     bodyRows.push(["Total", fmt(total), ""]);
   }
-  bodyRows.push(["1 - Time Funding", fmt(total), ""]);
+  bodyRows.push(["One-Time Upfront (Pre-paid)", fmt(total), ""]);
 
   const highlightIndex = bodyRows.length - 1;
 
@@ -180,11 +180,12 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
   doc.setFont("times", "italic");
   doc.setFontSize(8);
   doc.setTextColor(0, 0, 0);
-  doc.text("This quotation is valid for 60 days from the created date.", margin, pageHeight - 8);
+  doc.text("This quotation is valid for 60 days from the created date.", margin, pageHeight - 14);
+  doc.text("Pricing is based on current Azure/Cloud provider rates and is subject to change.", margin, pageHeight - 9);
   doc.text(
     `Generated ${new Date().toLocaleDateString()}`,
     pageWidth - margin,
-    pageHeight - 8,
+    pageHeight - 9,
     { align: "right" }
   );
 
