@@ -50,7 +50,15 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
   // Format dates as "Month Day, Year"
   const formatDateLong = (dateStr: string) => {
     if (!dateStr) return "—";
-    const d = new Date(dateStr + "T00:00:00");
+    // Handle MM/DD/YYYY format
+    const parts = dateStr.split("/");
+    let d: Date;
+    if (parts.length === 3) {
+      d = new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]));
+    } else {
+      d = new Date(dateStr);
+    }
+    if (isNaN(d.getTime())) return dateStr;
     return d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   };
 
