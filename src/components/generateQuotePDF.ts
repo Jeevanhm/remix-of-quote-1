@@ -117,7 +117,7 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
   const months = parseInt(info.numberOfMonths) || 12;
 
   const isOneTimeItem = (item: QuoteLineItem) =>
-    item.type === "Compute-On Prem" || item.itemName.startsWith("On-Premise Disk");
+    item.type === "Compute: On-Prem" || item.itemName.startsWith("On-Premise Disk");
 
   const recurringMonthly = items.filter((i) => !isOneTimeItem(i)).reduce((s, i) => s + i.qty * i.unitPrice, 0);
   const oneTimeMonthly = items.filter((i) => isOneTimeItem(i)).reduce((s, i) => s + i.qty * i.unitPrice, 0);
