@@ -195,7 +195,7 @@ const QuoteBuilder = () => {
   }, [catalog, catalogSearch]);
 
   const isOneTimeItem = (item: QuoteLineItem) =>
-    item.type === "Compute-On Prem" || item.itemName.startsWith("On-Premise Disk");
+    item.type === "Compute: On-Prem" || item.itemName.startsWith("On-Premise Disk");
 
   const recurringItems = lineItems.filter((i) => !isOneTimeItem(i));
   const oneTimeItems = lineItems.filter((i) => isOneTimeItem(i));
