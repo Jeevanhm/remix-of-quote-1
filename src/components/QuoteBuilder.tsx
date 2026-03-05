@@ -75,10 +75,23 @@ function getValidUntil(dateStr: string): string {
   return formatDate(d);
 }
 
+const CATEGORY_MIGRATIONS: Record<string, string> = {
+  "Compute": "Compute: PaaS",
+  "Compute-On Prem": "Compute: On-Prem",
+  "Compute-VM": "Compute: Cloud",
+};
+
+function migrateCatalogCategories(items: PriceItem[]): PriceItem[] {
+  return items.map((item) => ({
+    ...item,
+    category: CATEGORY_MIGRATIONS[item.category] || item.category,
+  }));
+}
+
 function loadCatalog(): PriceItem[] {
   try {
     const stored = localStorage.getItem("priceCatalog");
-    if (stored) return JSON.parse(stored);
+    if (stored) return migrateCatalogCategories(JSON.parse(stored));
   } catch {}
   return defaultPriceSheet;
 }
