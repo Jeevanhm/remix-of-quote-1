@@ -81,10 +81,13 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
   // ── Line items table
   const tableStartY = dividerY + 3;
 
+  const stripPrefix = (name: string, type: string) =>
+    name.startsWith(type + " - ") ? name.slice(type.length + 3) : name;
+
   const tableData = items.map((item) => [
     item.resource,
     item.type,
-    item.itemName,
+    stripPrefix(item.itemName, item.type),
     item.qty.toString(),
     `$${item.unitPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
     `$${(item.qty * item.unitPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
