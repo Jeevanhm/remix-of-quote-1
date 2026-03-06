@@ -79,6 +79,8 @@ const CATEGORY_MIGRATIONS: Record<string, string> = {
   "Compute": "Compute: PaaS",
   "Compute-On Prem": "Compute: On-Prem",
   "Compute-VM": "Compute: Cloud",
+  "Disk": "Disk: On-Prem",
+  "Managed Disk": "Managed Disk: Cloud",
 };
 
 function migrateCatalogCategories(items: PriceItem[]): PriceItem[] {
