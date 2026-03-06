@@ -458,7 +458,7 @@ const QuoteBuilder = () => {
                           />
                         </td>
                         <td className="px-3 py-1.5 text-foreground font-medium" title={item.itemName}>
-                          {item.itemName}
+                          {item.itemName.startsWith(item.type + " - ") ? item.itemName.slice(item.type.length + 3) : item.itemName}
                         </td>
                         <td className="px-2 py-1.5">
                           <Input
