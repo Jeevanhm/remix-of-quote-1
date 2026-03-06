@@ -320,7 +320,7 @@ const QuoteBuilder = () => {
         </div>
       </header>
 
-      <div className="max-w-[1400px] mx-auto px-6 py-6 grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6">
+      <div className="max-w-[1400px] mx-auto px-6 py-6 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
         {/* Left Panel: Item Picker */}
         <aside className="space-y-4">
           <div className="bg-card rounded-lg border border-border p-4 space-y-3 sticky top-[93px]">
@@ -457,7 +457,7 @@ const QuoteBuilder = () => {
                             className="h-8 text-sm border-border/50"
                           />
                         </td>
-                        <td className="px-3 py-1.5 text-foreground font-medium truncate max-w-[200px]" title={item.itemName}>
+                        <td className="px-3 py-1.5 text-foreground font-medium" title={item.itemName}>
                           {item.itemName}
                         </td>
                         <td className="px-2 py-1.5">
