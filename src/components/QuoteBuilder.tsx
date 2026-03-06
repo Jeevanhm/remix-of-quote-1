@@ -320,7 +320,7 @@ const QuoteBuilder = () => {
         </div>
       </header>
 
-      <div className="max-w-[1400px] mx-auto px-6 py-6 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+      <div className="max-w-[1400px] mx-auto px-6 py-6 grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6">
         {/* Left Panel: Item Picker */}
         <aside className="space-y-4">
           <div className="bg-card rounded-lg border border-border p-4 space-y-3 sticky top-[93px]">
@@ -354,7 +354,7 @@ const QuoteBuilder = () => {
                   className="w-full text-left px-3 py-2.5 rounded-md hover:bg-accent transition-colors group border border-transparent hover:border-border"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-foreground truncate mr-2">{item.item.startsWith(item.category + " - ") ? item.item.slice(item.category.length + 3) : item.item}</span>
+                    <span className="text-sm font-medium text-foreground mr-2 break-words">{item.item.startsWith(item.category + " - ") ? item.item.slice(item.category.length + 3) : item.item}</span>
                     <Plus className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 shrink-0" />
                   </div>
                   <div className="flex items-center justify-between mt-1">
