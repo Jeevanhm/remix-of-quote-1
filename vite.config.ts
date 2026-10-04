@@ -4,11 +4,15 @@ import path from "path";
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: "/quotes/",
   server: {
     host: "::",
     port: 8080,
     proxy: {
-      "/api": "http://127.0.0.1:3001",
+      "/quotes/api": {
+        target: "http://127.0.0.1:3001",
+        rewrite: (path) => path.replace(/^\/quotes/, ""),
+      },
     },
     hmr: {
       overlay: false,

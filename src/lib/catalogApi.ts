@@ -31,13 +31,15 @@ function getErrorMessage(value: unknown): string | undefined {
   return typeof error === "string" ? error : undefined;
 }
 
+const apiBase = import.meta.env.BASE_URL.replace(/\/$/, "");
+
 async function request(path: string, method = "GET", body?: unknown): Promise<unknown> {
   const headers: Record<string, string> = {};
   if (body !== undefined) headers["Content-Type"] = "application/json";
   const token = getAdminToken();
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const response = await fetch(path, {
+  const response = await fetch(`${apiBase}${path}`, {
     method,
     headers,
     body: body === undefined ? undefined : JSON.stringify(body),
@@ -164,7 +166,7 @@ export async function uploadQuotePdf(
   const token = getAdminToken();
   if (token) headers.Authorization = `Bearer ${token}`;
   const query = new URLSearchParams({ application });
-  const response = await fetch(`/api/quotes/${encodeURIComponent(quotationNumber)}?${query}`, {
+  const response = await fetch(`${apiBase}/api/quotes/${encodeURIComponent(quotationNumber)}?${query}`, {
     method: "PUT",
     headers,
     body: pdf,
