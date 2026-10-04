@@ -188,5 +188,7 @@ export async function generateQuotePDF(items: QuoteLineItem[], info: QuoteInfo) 
     { align: "right" }
   );
 
-  doc.save(`Quote_${info.application || "Azure"}_${new Date().toISOString().slice(0, 10)}.pdf`);
+  const fileName = `Quote_${info.application || "Azure"}_${new Date().toISOString().slice(0, 10)}.pdf`;
+  doc.save(fileName);
+  return doc.output("blob");
 }
