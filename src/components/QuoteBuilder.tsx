@@ -1,10 +1,26 @@
-import { useState, useMemo, useEffect } from "react";
-import { priceSheet as defaultPriceSheet, categories as defaultCategories, PriceItem } from "@/data/priceSheet";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { priceSheet as defaultPriceSheet, PriceItem } from "@/data/priceSheet";
+import {
+  adminLogin,
+  adminLogout,
+  checkAdminSession,
+  claimQuotationNumber,
+  createCatalogItem,
+  fetchCatalog,
+  initializeCatalog,
+  peekQuotationNumber,
+  removeCatalogItem,
+  resetCatalog as resetSharedCatalog,
+  seedQuotationCounter,
+  updateCatalogItem as updateSharedCatalogItem,
+  uploadQuotePdf,
+} from "@/lib/catalogApi";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2, Plus, FileDown, Search, Settings, X, Pencil } from "lucide-react";
 import { generateQuotePDF } from "./generateQuotePDF";
+import { catalogToCsv, parseCatalogCsv } from "@/lib/catalogCsv";
 import { toast } from "sonner";
 import msLogo from "@/assets/mount-sinai-logo.jpg";
 import {
@@ -37,17 +53,12 @@ export interface QuoteInfo {
   numberOfMonths: string;
 }
 
-function peekQuotationNumber(): string {
-  const current = parseInt(localStorage.getItem("quotationCounter") || "0", 10);
-  return (current + 1).toString().padStart(5, "0");
-}
-
-function incrementQuotationNumber(): string {
-  const key = "quotationCounter";
-  const current = parseInt(localStorage.getItem(key) || "0", 10);
-  const next = current + 1;
-  localStorage.setItem(key, next.toString());
-  return next.toString().padStart(5, "0");
+function readLegacyQuotationCounter(): number {
+  try {
+    return parseInt(localStorage.getItem("quotationCounter") || "0", 10) || 0;
+  } catch {
+    return 0;
+  }
 }
 
 function formatDate(d: Date): string {
@@ -90,24 +101,50 @@ function migrateCatalogCategories(items: PriceItem[]): PriceItem[] {
   }));
 }
 
-function loadCatalog(): PriceItem[] {
+function isPriceItem(value: unknown): value is PriceItem {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Record<string, unknown>;
+  return (
+    typeof item.item === "string" &&
+    typeof item.unitPrice === "number" &&
+    typeof item.category === "string"
+  );
+}
+
+function loadLegacyCatalog(): PriceItem[] {
+  let stored: string | null;
   try {
-    const stored = localStorage.getItem("priceCatalog");
-    if (stored) return migrateCatalogCategories(JSON.parse(stored));
-  } catch {}
+    stored = localStorage.getItem("priceCatalog");
+  } catch (error) {
+    console.warn("Could not read the saved local catalog; using the default catalog.", error);
+    return defaultPriceSheet;
+  }
+  if (!stored) return defaultPriceSheet;
+
+  try {
+    const parsed: unknown = JSON.parse(stored);
+    if (Array.isArray(parsed) && parsed.every(isPriceItem)) {
+      return migrateCatalogCategories(parsed);
+    }
+    console.warn("The saved local catalog is invalid; using the default catalog.");
+  } catch (error) {
+    console.warn("Could not parse the saved local catalog; using the default catalog.", error);
+  }
   return defaultPriceSheet;
 }
 
-function saveCatalog(items: PriceItem[]) {
-  localStorage.setItem("priceCatalog", JSON.stringify(items));
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "An unexpected error occurred.";
 }
 
 const QuoteBuilder = () => {
-  const [catalog, setCatalog] = useState<PriceItem[]>(loadCatalog);
+  const [catalog, setCatalog] = useState<PriceItem[]>([]);
+  const [catalogStatus, setCatalogStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [catalogError, setCatalogError] = useState("");
   const [lineItems, setLineItems] = useState<QuoteLineItem[]>([]);
   const now = formatDate(new Date());
   const [quoteInfo, setQuoteInfo] = useState<QuoteInfo>(() => ({
-    quotationNumber: peekQuotationNumber(),
+    quotationNumber: "",
     application: "",
     quoteFrom: "",
     issuer: "Cloud Architect & Engineering",
@@ -126,9 +163,86 @@ const QuoteBuilder = () => {
 
   const catalogCategories = useMemo(() => [...new Set(catalog.map((p) => p.category))].sort(), [catalog]);
 
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminPassword, setAdminPassword] = useState("");
+
   useEffect(() => {
-    saveCatalog(catalog);
-  }, [catalog]);
+    checkAdminSession()
+      .then(setIsAdmin)
+      .catch((error) => console.warn("Could not verify the admin session.", error));
+  }, []);
+
+  const handleAdminLogin = async () => {
+    try {
+      await adminLogin(adminPassword);
+      setIsAdmin(true);
+      setAdminPassword("");
+      toast.success("Signed in as admin.");
+    } catch (error) {
+      toast.error(errorMessage(error));
+    }
+  };
+
+  const handleAdminLogout = () => {
+    adminLogout();
+    setIsAdmin(false);
+    setEditingItem(null);
+  };
+
+  // A rejected request means the admin session expired
+  const handleWriteError = async (action: string, error: unknown) => {
+    const message = errorMessage(error);
+    toast.error(`Could not ${action}: ${message}`);
+    if (/login required/i.test(message)) setIsAdmin(false);
+    await refreshCatalog();
+  };
+
+  const refreshCatalog = useCallback(async () => {
+    setCatalogStatus("loading");
+    setCatalogError("");
+    try {
+      let result = await fetchCatalog();
+      if (!result.initialized) {
+        await initializeCatalog(loadLegacyCatalog());
+        result = await fetchCatalog();
+      }
+      setCatalog(result.items);
+      setCatalogStatus("ready");
+    } catch (error) {
+      const message = errorMessage(error);
+      setCatalogError(message);
+      setCatalogStatus("error");
+      toast.error(`Unable to load the shared catalog: ${message}`);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshCatalog();
+  }, [refreshCatalog]);
+
+  const refreshQuotationNumber = useCallback(async () => {
+    try {
+      const legacy = readLegacyQuotationCounter();
+      let number: string;
+      if (legacy > 0) {
+        number = await seedQuotationCounter(legacy);
+        try {
+          localStorage.removeItem("quotationCounter");
+        } catch (error) {
+          console.warn("Could not clear the old local quotation counter.", error);
+        }
+      } else {
+        number = await peekQuotationNumber();
+      }
+      setQuoteInfo((p) => ({ ...p, quotationNumber: number }));
+    } catch (error) {
+      toast.error(`Unable to load the quotation number: ${errorMessage(error)}`);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshQuotationNumber();
+  }, [refreshQuotationNumber]);
 
   // Update validUntil when date changes
   const updateDate = (dateStr: string) => {
@@ -172,36 +286,98 @@ const QuoteBuilder = () => {
   };
 
   // Catalog CRUD
-  const addCatalogItem = () => {
+  const addCatalogItem = async () => {
+    if (catalogStatus !== "ready") {
+      toast.error("The shared catalog is not available.");
+      return;
+    }
     if (!newItem.item.trim() || !newItem.category.trim()) {
       toast.error("Item name and category are required.");
       return;
     }
-    if (catalog.some((c) => c.item === newItem.item.trim())) {
+    if (catalog.some((c) => c.item.toLowerCase() === newItem.item.trim().toLowerCase())) {
       toast.error("An item with this name already exists.");
       return;
     }
-    setCatalog((prev) => [...prev, { ...newItem, item: newItem.item.trim(), category: newItem.category.trim() }]);
-    setNewItem({ item: "", unitPrice: 0, category: "" });
-    toast.success("Item added to catalog.");
+    try {
+      const item = {
+        ...newItem,
+        item: newItem.item.trim(),
+        category: newItem.category.trim(),
+      };
+      setCatalog(await createCatalogItem(item));
+      setNewItem({ item: "", unitPrice: 0, category: "" });
+      toast.success("Item added to shared catalog.");
+    } catch (error) {
+      await handleWriteError("add catalog item", error);
+    }
   };
 
-  const updateCatalogItem = () => {
+  const updateCatalogItem = async () => {
+    if (catalogStatus !== "ready") {
+      toast.error("The shared catalog is not available.");
+      return;
+    }
     if (!editingItem) return;
-    setCatalog((prev) => prev.map((c) => (c.item === editingItem.item ? editingItem : c)));
-    setEditingItem(null);
-    toast.success("Catalog item updated.");
+    try {
+      setCatalog(await updateSharedCatalogItem(editingItem.item, editingItem));
+      setEditingItem(null);
+      toast.success("Shared catalog item updated.");
+    } catch (error) {
+      await handleWriteError("update catalog item", error);
+    }
   };
 
-  const deleteCatalogItem = (itemName: string) => {
-    setCatalog((prev) => prev.filter((c) => c.item !== itemName));
-    toast.success("Item removed from catalog.");
+  const deleteCatalogItem = async (itemName: string) => {
+    if (catalogStatus !== "ready") {
+      toast.error("The shared catalog is not available.");
+      return;
+    }
+    try {
+      setCatalog(await removeCatalogItem(itemName));
+      toast.success("Item removed from shared catalog.");
+    } catch (error) {
+      await handleWriteError("remove catalog item", error);
+    }
   };
 
-  const resetCatalog = () => {
-    setCatalog(defaultPriceSheet);
-    localStorage.removeItem("priceCatalog");
-    toast.success("Catalog reset to defaults.");
+  const resetCatalog = async () => {
+    if (catalogStatus !== "ready") {
+      toast.error("The shared catalog is not available.");
+      return;
+    }
+    try {
+      setCatalog(await resetSharedCatalog(defaultPriceSheet));
+      toast.success("Shared catalog reset to defaults.");
+    } catch (error) {
+      await handleWriteError("reset catalog", error);
+    }
+  };
+
+  const downloadCatalog = () => {
+    const blob = new Blob([catalogToCsv(catalog)], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "catalog.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const uploadCatalog = async (file: File | undefined) => {
+    if (!file) return;
+    try {
+      const items = parseCatalogCsv(await file.text());
+      if (!window.confirm(`Replace the entire shared catalog with ${items.length} items from "${file.name}"?`)) return;
+      setCatalog(await resetSharedCatalog(items));
+      toast.success(`Catalog replaced with ${items.length} items.`);
+    } catch (error) {
+      if (error instanceof Error && /^(Line \d|The file|The header)/.test(error.message)) {
+        toast.error(error.message);
+      } else {
+        await handleWriteError("upload catalog", error);
+      }
+    }
   };
 
   const filteredCatalogItems = useMemo(() => {
@@ -226,11 +402,22 @@ const QuoteBuilder = () => {
       toast.error("Add at least one item to generate a quote.");
       return;
     }
-    const currentNumber = incrementQuotationNumber();
+    let currentNumber: string;
+    try {
+      currentNumber = await claimQuotationNumber();
+    } catch (error) {
+      toast.error(`Could not reserve a quotation number: ${errorMessage(error)}`);
+      return;
+    }
     const infoWithNumber = { ...quoteInfo, quotationNumber: currentNumber };
-    await generateQuotePDF(lineItems, infoWithNumber);
-    // Update displayed number to next preview
-    setQuoteInfo((p) => ({ ...p, quotationNumber: peekQuotationNumber() }));
+    const pdf = await generateQuotePDF(lineItems, infoWithNumber);
+    try {
+      await uploadQuotePdf(currentNumber, quoteInfo.application, pdf);
+    } catch (error) {
+      toast.error(`PDF downloaded, but the server copy could not be saved: ${errorMessage(error)}`);
+    }
+    // Update displayed number to the next shared number
+    await refreshQuotationNumber();
     toast.success("PDF generated successfully!");
   };
 
@@ -259,7 +446,40 @@ const QuoteBuilder = () => {
                   <DialogTitle>Price Catalog Management</DialogTitle>
                 </DialogHeader>
 
+                {catalogStatus !== "ready" && (
+                  <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm" role="status">
+                    <span>
+                      {catalogStatus === "loading"
+                        ? "Loading the shared catalog..."
+                        : `Shared catalog unavailable: ${catalogError}`}
+                    </span>
+                    {catalogStatus === "error" && (
+                      <Button variant="outline" size="sm" onClick={() => void refreshCatalog()}>
+                        Retry
+                      </Button>
+                    )}
+                  </div>
+                )}
+
+                {/* Admin login */}
+                {isAdmin ? (
+                  <div className="flex items-center justify-between rounded-md border border-border bg-muted/40 px-3 py-2 text-sm">
+                    <span>Signed in as admin</span>
+                    <Button variant="outline" size="sm" onClick={handleAdminLogout}>Log out</Button>
+                  </div>
+                ) : (
+                  <form
+                    className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2"
+                    onSubmit={(e) => { e.preventDefault(); void handleAdminLogin(); }}
+                  >
+                    <span className="text-sm text-muted-foreground shrink-0">Admin login required to change the catalog</span>
+                    <Input type="password" placeholder="Admin password" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} className="h-8" autoComplete="current-password" />
+                    <Button type="submit" size="sm" disabled={!adminPassword}>Log in</Button>
+                  </form>
+                )}
+
                 {/* Add new item */}
+                {isAdmin && (
                 <div className="border border-border rounded-lg p-4 space-y-3">
                   <h3 className="text-sm font-semibold text-foreground">Add New Item</h3>
                   <div className="grid grid-cols-3 gap-3">
@@ -267,12 +487,13 @@ const QuoteBuilder = () => {
                     <Input placeholder="Category" value={newItem.category} onChange={(e) => setNewItem((p) => ({ ...p, category: e.target.value }))} />
                     <div className="flex gap-2">
                       <Input type="number" placeholder="Unit Price" value={newItem.unitPrice || ""} onChange={(e) => setNewItem((p) => ({ ...p, unitPrice: parseFloat(e.target.value) || 0 }))} />
-                      <Button onClick={addCatalogItem} size="sm" className="shrink-0">
+                      <Button onClick={() => void addCatalogItem()} size="sm" className="shrink-0" disabled={catalogStatus !== "ready"}>
                         <Plus className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
                 </div>
+                )}
 
                 {/* Search & Reset */}
                 <div className="flex gap-2">
@@ -280,18 +501,40 @@ const QuoteBuilder = () => {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input placeholder="Search catalog..." value={catalogSearch} onChange={(e) => setCatalogSearch(e.target.value)} className="pl-9" />
                   </div>
-                  <Button variant="outline" size="sm" onClick={resetCatalog}>Reset to Defaults</Button>
+                  {isAdmin && (
+                    <>
+                      <Button variant="outline" size="sm" onClick={downloadCatalog} disabled={catalogStatus !== "ready"}>Download CSV</Button>
+                      <Button variant="outline" size="sm" asChild disabled={catalogStatus !== "ready"}>
+                        <label className="cursor-pointer">
+                          Upload CSV
+                          <input
+                            type="file"
+                            accept=".csv,text/csv"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              e.target.value = "";
+                              void uploadCatalog(file);
+                            }}
+                          />
+                        </label>
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => void resetCatalog()} disabled={catalogStatus !== "ready"}>Reset to Defaults</Button>
+                    </>
+                  )}
                 </div>
 
                 {/* Catalog list */}
                 <div className="flex-1 overflow-y-auto space-y-1 min-h-0">
-                  {filteredCatalogItems.map((item) => (
+                  {catalogStatus === "loading" ? (
+                    <p className="py-6 text-center text-sm text-muted-foreground">Loading shared catalog...</p>
+                  ) : catalogStatus === "error" ? null : filteredCatalogItems.map((item) => (
                     <div key={item.item} className="flex items-center gap-2 px-3 py-2 rounded-md border border-border/50 hover:bg-muted/30 text-sm">
                       {editingItem?.item === item.item ? (
                         <>
                           <Input value={editingItem.category} onChange={(e) => setEditingItem((p) => p ? { ...p, category: e.target.value } : p)} className="h-7 text-xs flex-1" />
                           <Input type="number" value={editingItem.unitPrice} onChange={(e) => setEditingItem((p) => p ? { ...p, unitPrice: parseFloat(e.target.value) || 0 } : p)} className="h-7 text-xs w-24" />
-                          <Button size="sm" variant="ghost" onClick={updateCatalogItem} className="h-7 px-2 text-xs">Save</Button>
+                          <Button size="sm" variant="ghost" onClick={() => void updateCatalogItem()} className="h-7 px-2 text-xs">Save</Button>
                           <Button size="sm" variant="ghost" onClick={() => setEditingItem(null)} className="h-7 px-2 text-xs"><X className="w-3 h-3" /></Button>
                         </>
                       ) : (
@@ -299,12 +542,16 @@ const QuoteBuilder = () => {
                           <span className="flex-1 truncate font-medium text-foreground">{item.item}</span>
                           <span className="text-xs text-muted-foreground w-28 truncate">{item.category}</span>
                           <span className="text-xs font-mono text-primary w-20 text-right">${item.unitPrice.toFixed(2)}</span>
-                          <button onClick={() => setEditingItem({ ...item })} className="p-1 rounded hover:bg-accent text-muted-foreground">
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                          <button onClick={() => deleteCatalogItem(item.item)} className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          {isAdmin && (
+                            <>
+                              <button onClick={() => setEditingItem({ ...item })} className="p-1 rounded hover:bg-accent text-muted-foreground">
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button onClick={() => void deleteCatalogItem(item.item)} className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </>
+                          )}
                         </>
                       )}
                     </div>
@@ -349,7 +596,14 @@ const QuoteBuilder = () => {
             </Select>
 
             <div className="max-h-[calc(100vh-320px)] overflow-y-auto space-y-1 pr-1">
-              {filteredItems.map((item) => (
+              {catalogStatus === "loading" ? (
+                <p className="text-sm text-muted-foreground text-center py-8">Loading shared catalog...</p>
+              ) : catalogStatus === "error" ? (
+                <div className="space-y-2 py-8 text-center">
+                  <p className="text-sm text-muted-foreground">Shared catalog unavailable.</p>
+                  <Button variant="outline" size="sm" onClick={() => void refreshCatalog()}>Retry</Button>
+                </div>
+              ) : filteredItems.map((item) => (
                 <button
                   key={item.item}
                   onClick={() => addItem(item)}
@@ -365,7 +619,7 @@ const QuoteBuilder = () => {
                   </div>
                 </button>
               ))}
-              {filteredItems.length === 0 && (
+              {catalogStatus === "ready" && filteredItems.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-8">No items found</p>
               )}
             </div>
